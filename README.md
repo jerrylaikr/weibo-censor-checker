@@ -1,7 +1,54 @@
 # weibo-censor-checker
 Check modified/censored weibo posts. 
 
+本程序可结合weibo-feed-spider或weiboSpider，检测爬取到的微博中有哪些被删改了，并将被删改的微博永久保存。
 
+暂时不支持图片、视频保存。
+
+现版本仅支持使用MongoDB存储，之后会考虑加入其他更方便本地运行的读写方式。
+
+## Installation
+Install dependency `weibo-spider`
+```bash
+git clone https://github.com/dataabc/weiboSpider.git
+cd weiboSpider/
+pip install -r requirements.txt .
+```
+
+Install dependency `weibo-feed-spider`
+```bash
+git clone https://github.com/jerrylaikr/weibo-feed-spider.git
+cd weibo-feed-spider/
+pip install .
+```
+
+Install from source code
+```bash
+$ git clone https://github.com/jerrylaikr/weibo-censor-checker.git
+$ cd weibo-censor-checker
+$ pip install .
+```
+Prepare `config.json`
+
+
+## Run script
+
+```bash
+$ python3 -m weibo-censor-checker
+```
+
+也可以写个bash script放在根目录，方便后台运行
+```bash
+cd ~/weibo-censor-checker
+nohup python3 -m wb_checker >/dev/null 2>&1 &
+```
+
+假设文件名是`run_checker.sh`
+```bash
+$ bash ~/run_checker.sh
+```
+
+---
 ## 思路
 
 写个daemon挂在后台和weibo-feed-spider并行跑。
@@ -36,6 +83,6 @@ find().sort({"publish_time":1})
 
 计划A：让我自己魔改的Parser模仿原爬虫的解析方式，问题是难以判断是原创长微博还是短微博
 
-计划B：在compare时忽略可能存在的用户名。现在fetch_content原创未必都会有用户名加冒号，转发微博则是以`转发理由:`开头，直接再加一个条件。
+**计划B：在compare时忽略可能存在的用户名。现在fetch_content原创未必都会有用户名加冒号，转发微博则是以`转发理由:`开头，直接再加一个条件。**
 
 计划C：继续魔改weibo-feed-spider的Parser，用我的风格统一weibo_content储存格式。简单的改动就是让原创长短微博都不包含用户名。甚至可以每条微博都用CommentParser，问题在于不知道会不会触发反爬机制。
