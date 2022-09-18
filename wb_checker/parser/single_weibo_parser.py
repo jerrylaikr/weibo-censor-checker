@@ -1,12 +1,15 @@
+import logging
 from weibo_spider.parser.comment_parser import CommentParser
 from weibo_spider.parser.util import handle_garbled
+
+logger = logging.getLogger("checker.single_weibo_parser")
 
 
 class SingleWeiboParser(CommentParser):
     def __init__(self, cookie, weibo_id):
         super().__init__(cookie, weibo_id)
 
-    def is_removed(self):
+    def is_removed(self) -> bool:
         # 被夹了
         return self.selector.xpath("//div[@class='me']")
 
@@ -18,8 +21,15 @@ class SingleWeiboParser(CommentParser):
             return True
 
     def get_content(self):
+        """
+        原创微博：
+            不论长短，返回：用户名+":"+微博内容
+        转发微博：
+            返回"转发理由: "+转发理由+"原始用户: "+原po用户名+"转发内容: "+原po内容
+        """
         if self.is_removed():
             # 被夹了
+            logger.info("这条微博消失了！！！")
             return ""
 
         weibo_content = ""
