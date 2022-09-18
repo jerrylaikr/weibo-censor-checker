@@ -88,9 +88,13 @@ class Checker:
                 else:
                     logger.info("X" * 50 + " NOT SAME " + "X" * 50)
                     # add orig doc to keeper coll
+                    doc_copy = {k: v for k, v in doc.items() if k != "_id"}
+                    doc_copy["state"] = (
+                        "DELETED" if not fetched_content else "MODIFIED"
+                    )  # reason to keep this post
                     self.coll_keeper.update_one(
                         {"id": weibo_id},
-                        {"$set": doc},
+                        {"$set": doc_copy},
                         upsert=True,
                     )
 
