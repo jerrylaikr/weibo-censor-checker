@@ -80,7 +80,10 @@ class Checker:
                 logger.info("orig:\n" + orig_content)
                 logger.info("fetched:\n" + fetched_content)
 
-                if orig_content == fetched_content:
+                if (
+                    orig_content == fetched_content
+                    or orig_content == fetched_content[fetched_content.find(":") + 1 :]
+                ):
                     logger.info("O" * 50 + "   SAME   " + "O" * 50)
                 else:
                     logger.info("X" * 50 + " NOT SAME " + "X" * 50)
