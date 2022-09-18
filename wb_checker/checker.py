@@ -56,8 +56,7 @@ class Checker:
                 orig_content: str = doc["content"]
 
                 logger.info("*" * 100)
-                logger.info(doc["id"])
-                logger.info(doc["publish_time"])
+                logger.info(doc["id"] + ", " + doc["publish_time"])
                 # check if need to pause
                 publish_time = str_to_time(doc["publish_time"])
                 if publish_time > datetime.now() - self.observation_interval:
@@ -77,15 +76,14 @@ class Checker:
                 orig_content = "".join(orig_content.split())
                 fetched_content = "".join(fetched_content.split())
 
-                logger.info("orig:\n" + orig_content)
-                logger.info("fetched:\n" + fetched_content)
-
                 if (
                     orig_content == fetched_content
                     or orig_content == fetched_content[fetched_content.find(":") + 1 :]
                 ):
                     logger.info("O" * 50 + "   SAME   " + "O" * 50)
                 else:
+                    logger.info("orig:\n" + orig_content)
+                    logger.info("fetched:\n" + fetched_content)
                     logger.info("X" * 50 + " NOT SAME " + "X" * 50)
                     # add orig doc to keeper coll
                     doc_copy = {k: v for k, v in doc.items() if k != "_id"}
