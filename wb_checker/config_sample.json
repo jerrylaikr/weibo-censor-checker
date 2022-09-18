@@ -1,0 +1,9 @@
+{
+    "observation_interval": 24,
+    "cookie": "YOUR COOKIE HERE",
+    "mongo_config": {
+        "connection_string": "mongodb://admin:password@localhost:27017/weibo",
+        "dba_name": "",
+        "dba_password": ""
+    }
+}
