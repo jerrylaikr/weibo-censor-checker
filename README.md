@@ -29,3 +29,13 @@ find().sort({"publish_time":1})
 ### 不需要检查的情况
 
 如果`publish_time > now - 24h`，说明这条微博发出来后还没经过24小时的观察期，还有被夹的可能性。因为按发布时间顺序排序，所以该cursor之后的doc也都不需要检测。此处可以直接休眠到`publish_time + 24h`。
+
+
+## 现有的一些问题
+原创短微博使用PageParser解析时会把用户名包括在content中，而原创长微博是用CommentParser解析，content不会包含发布者用户名。
+
+计划A：让我自己魔改的Parser模仿原爬虫的解析方式，问题是难以判断是原创长微博还是短微博
+
+计划B：在compare时忽略可能存在的用户名。现在fetch_content原创未必都会有用户名加冒号，转发微博则是以`转发理由:`开头，直接再加一个条件。
+
+计划C：继续魔改weibo-feed-spider的Parser，用我的风格统一weibo_content储存格式。简单的改动就是让原创长短微博都不包含用户名。甚至可以每条微博都用CommentParser，问题在于不知道会不会触发反爬机制。
