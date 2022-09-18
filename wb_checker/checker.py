@@ -1,10 +1,20 @@
+#!/usr/bin/env python
+# -*- coding: UTF-8 -*-
+
+from datetime import datetime, timedelta
 import json
 import logging
+import logging.config
 import os
 import shutil
 import sys
+from time import sleep
 
 import pymongo
+from tqdm import tqdm
+
+from weibo_spider.datetime_util import str_to_time
+from wb_checker.parser.single_weibo_parser import SingleWeiboParser
 
 logging_path = os.path.split(os.path.realpath(__file__))[0] + os.sep + "logging.conf"
 logging.config.fileConfig(logging_path)
@@ -14,7 +24,7 @@ logger = logging.getLogger("checker")
 class Checker:
     def __init__(self, config) -> None:
         # get deltatime after which a post is considered safe
-        self.observation_interval = config["observation_interval"]
+        self.observation_interval = timedelta(hours=int(config["observation_interval"]))
 
         # get user cookie
         self.cookie = config["cookie"]
@@ -22,21 +32,77 @@ class Checker:
         # get DB configs
         self.mongo_config = config.get("mongo_config")
 
-        pass
+        # connect to MongoDB
+        client = pymongo.MongoClient(self.mongo_config["connection_string"])
+        db = client["weibo"]
+        self.coll_wb, self.coll_keeper = db["weibo"], db["keeper"]
 
-    def check_post(self, weibo_id: str) -> bool:
-        pass
+    def get_weibo_content_by_id(self, weibo_id) -> str:
+        try:
+            parser = SingleWeiboParser(self.cookie, weibo_id)
+            return parser.get_content()
 
-    def remove_post(self, weibo_id: str) -> None:
-        pass
+        except Exception as e:
+            logger.exception(e)
 
-    def do_smth_to_censored_post(self, weibo_id: str):
-        pass
+    def _run(self):
+        while True:
+            doc_cursor = self.coll_wb.find({}, {"_id": False}).sort(
+                "publish_time", pymongo.ASCENDING
+            )
+            while doc_cursor.alive:
+                doc = doc_cursor.next()
+                weibo_id = doc["id"]
+                orig_content: str = doc["content"]
+
+                logger.info("*" * 100)
+                logger.info(doc["id"])
+                logger.info(doc["publish_time"])
+                # check if need to pause
+                publish_time = str_to_time(doc["publish_time"])
+                if publish_time > datetime.now() - self.observation_interval:
+                    delta = publish_time + self.observation_interval - datetime.now()
+                    logger.info(
+                        f"sleep until {publish_time + self.observation_interval} ..."
+                    )
+                    logger.info(f"sleep for {int(delta.total_seconds())} seconds")
+                    for _ in tqdm(range(int(delta.total_seconds()))):
+                        sleep(1)
+
+                # check for censor/modification
+                logger.info("Checking...")
+                fetched_content = self.get_weibo_content_by_id(weibo_id)
+
+                # remove white spaces
+                orig_content = "".join(orig_content.split())
+                fetched_content = "".join(fetched_content.split())
+
+                logger.info("orig:\n" + orig_content)
+                logger.info("fetched:\n" + fetched_content)
+
+                if orig_content == fetched_content:
+                    logger.info("O" * 50 + "   SAME   " + "O" * 50)
+                else:
+                    logger.info("X" * 50 + " NOT SAME " + "X" * 50)
+                    # add orig doc to keeper coll
+                    self.coll_keeper.update_one(
+                        {"id": weibo_id},
+                        {"$set": doc},
+                        upsert=True,
+                    )
+
+                # remove doc from weibo coll
+                self.coll_wb.delete_one({"id": weibo_id})
+
+                # for _ in tqdm(range(5)):
+                #     sleep(0.2)
+            for _ in tqdm(range(60)):
+                sleep(1)
 
     def run(self):
         """Start checking posts."""
         try:
-            pass
+            self._run()
         except Exception as e:
             logger.exception(e)
 
