@@ -7,6 +7,7 @@ import logging
 import logging.config
 import os
 import shutil
+from sqlite3 import Cursor
 import sys
 from time import sleep
 
@@ -51,16 +52,18 @@ class Checker:
 
     def _run(self):
         while True:
-            doc_cursor = self.coll_wb.find({}, {"_id": False}).sort(
-                "publish_time", pymongo.ASCENDING
-            )
-            while doc_cursor.alive:
-                doc = doc_cursor.next()
+            # sort weibo posts in chronogical order
+            doc_cursor = self.coll_wb.find(
+                {}, {"_id": False}, no_cursor_timeout=True
+            ).sort("publish_time", pymongo.ASCENDING)
+
+            for doc in doc_cursor:
                 weibo_id = doc["id"]
                 orig_content: str = doc["content"]
 
                 logger.info("*" * 100)
                 logger.info(doc["id"] + ", " + doc["publish_time"])
+
                 # check if need to pause
                 publish_time = str_to_time(doc["publish_time"])
                 if publish_time > datetime.now() - self.observation_interval:
@@ -105,6 +108,8 @@ class Checker:
 
                 # for _ in tqdm(range(5)):
                 #     sleep(0.2)
+
+            doc_cursor.close()
             for _ in tqdm(range(60)):
                 sleep(1)
 
