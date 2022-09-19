@@ -39,8 +39,12 @@ class Checker:
 
     def get_weibo_content_by_id(self, weibo_id) -> str:
         try:
-            parser = SingleWeiboParser(self.cookie, weibo_id)
-            return parser.get_content()
+            for _ in range(3):
+                parser = SingleWeiboParser(self.cookie, weibo_id)
+                weibo_content = parser.get_content()
+                if weibo_content is not None:
+                    return weibo_content
+                sleep(8)
 
         except Exception as e:
             logger.exception(e)
