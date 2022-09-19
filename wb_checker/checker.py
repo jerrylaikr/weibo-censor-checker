@@ -40,7 +40,9 @@ class Checker:
 
     def get_weibo_content_by_id(self, weibo_id) -> str:
         try:
-            for _ in range(3):
+            for i in range(5):
+                if i > 0:
+                    logger.info(f"Retry {i}/5")
                 parser = SingleWeiboParser(self.cookie, weibo_id)
                 weibo_content = parser.get_content()
                 if weibo_content is not None:

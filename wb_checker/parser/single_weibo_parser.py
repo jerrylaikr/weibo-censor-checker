@@ -37,20 +37,19 @@ class SingleWeiboParser(CommentParser):
             if self.is_original_weibo():
                 # 原创微博，需要加入用户名
                 original_user = info.xpath("div/a/text()")[0]
-                for i in range(3):
-                    if i > 0:
-                        logger.info(f"Retry {i}/3")
-                    weibo_content = self.get_long_weibo()
-                    if weibo_content is not None:
-                        return original_user + ":" + weibo_content
+                orig_post = self.get_long_weibo()
+                if orig_post:
+                    return original_user + ":" + orig_post
             else:
                 # 拼接转发信息
+                # 如果orig_post为None或空字符串说明获取失败，需要重新获取
+                # 转发的原po被删除会显示 "抱歉，此微博已被作者删除。"
                 orig_post = self.get_long_retweet()
                 wb_time = info.xpath("//span[@class='ct']/text()")[0]
                 retweet_reason = handle_garbled(info.xpath("div")[-1])
                 retweet_reason = retweet_reason[: retweet_reason.rindex(wb_time)]
                 original_user = info.xpath("div/span[@class='cmt']/a/text()")
-                if original_user:
+                if original_user and orig_post:
                     original_user = original_user[0].replace("@", "")
                     weibo_content = (
                         retweet_reason
@@ -61,10 +60,11 @@ class SingleWeiboParser(CommentParser):
                         + "转发内容: "
                         + orig_post
                     )
-                else:
+                elif orig_post:
                     weibo_content = retweet_reason + "\n" + "转发内容: " + orig_post
                 return weibo_content
+            # in the case of network error, return None
 
         except Exception as e:
-            logger.exception("网络出错")
+            logger.exception("get_content()时网络出错")
             logger.exception(e)
