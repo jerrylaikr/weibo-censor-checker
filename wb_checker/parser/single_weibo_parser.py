@@ -27,35 +27,44 @@ class SingleWeiboParser(CommentParser):
         转发微博：
             返回"转发理由: "+转发理由+"原始用户: "+原po用户名+"转发内容: "+原po内容
         """
-        if self.is_removed():
-            # 被夹了
-            logger.info("这条微博消失了！！！")
-            return ""
+        try:
+            if self.is_removed():
+                # 被夹了
+                logger.info("这条微博消失了！！！")
+                return ""
 
-        weibo_content = ""
-        info = self.selector.xpath("//div[@class='c']")[1]
-        if self.is_original_weibo():
-            # 原创微博，需要加入用户名
-            original_user = info.xpath("div/a/text()")[0]
-            return original_user + ":" + self.get_long_weibo()
-        else:
-            # 拼接转发信息
-            orig_post = self.get_long_retweet()
-            wb_time = info.xpath("//span[@class='ct']/text()")[0]
-            retweet_reason = handle_garbled(info.xpath("div")[-1])
-            retweet_reason = retweet_reason[: retweet_reason.rindex(wb_time)]
-            original_user = info.xpath("div/span[@class='cmt']/a/text()")
-            if original_user:
-                original_user = original_user[0].replace("@", "")
-                weibo_content = (
-                    retweet_reason
-                    + "\n"
-                    + "原始用户: "
-                    + original_user
-                    + "\n"
-                    + "转发内容: "
-                    + orig_post
-                )
+            info = self.selector.xpath("//div[@class='c']")[1]
+            if self.is_original_weibo():
+                # 原创微博，需要加入用户名
+                original_user = info.xpath("div/a/text()")[0]
+                for i in range(3):
+                    if i > 0:
+                        logger.info(f"Retry {i}/3")
+                    weibo_content = self.get_long_weibo()
+                    if weibo_content is not None:
+                        return original_user + ":" + weibo_content
             else:
-                weibo_content = retweet_reason + "\n" + "转发内容: " + orig_post
-            return weibo_content
+                # 拼接转发信息
+                orig_post = self.get_long_retweet()
+                wb_time = info.xpath("//span[@class='ct']/text()")[0]
+                retweet_reason = handle_garbled(info.xpath("div")[-1])
+                retweet_reason = retweet_reason[: retweet_reason.rindex(wb_time)]
+                original_user = info.xpath("div/span[@class='cmt']/a/text()")
+                if original_user:
+                    original_user = original_user[0].replace("@", "")
+                    weibo_content = (
+                        retweet_reason
+                        + "\n"
+                        + "原始用户: "
+                        + original_user
+                        + "\n"
+                        + "转发内容: "
+                        + orig_post
+                    )
+                else:
+                    weibo_content = retweet_reason + "\n" + "转发内容: " + orig_post
+                return weibo_content
+
+        except Exception as e:
+            logger.exception("网络出错")
+            logger.exception(e)
