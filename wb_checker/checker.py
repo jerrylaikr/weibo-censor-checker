@@ -89,11 +89,11 @@ class Checker:
                     orig_content == fetched_content
                     or orig_content == fetched_content[fetched_content.find(":") + 1 :]
                 ):
-                    logger.info("O" * 50 + "   SAME   " + "O" * 50)
+                    logger.info("O" * 30 + "    SAME    " + "O" * 30)
                 else:
                     logger.info("orig:\n" + orig_content)
                     logger.info("fetched:\n" + fetched_content)
-                    logger.info("X" * 50 + " NOT SAME " + "X" * 50)
+                    logger.info("X" * 30 + "  NOT SAME  " + "X" * 30)
                     # add orig doc to keeper coll
                     doc_copy = {k: v for k, v in doc.items() if k != "_id"}
                     doc_copy["state"] = (
@@ -117,6 +117,11 @@ class Checker:
 
     def run(self):
         """Start checking posts."""
+        logger.info(
+            "Approximate end time: {}".format(
+                (datetime.now() - self.observation_interval).strftime("%Y-%m-%d %H:%M")
+            )
+        )
         try:
             self._run()
         except Exception as e:
