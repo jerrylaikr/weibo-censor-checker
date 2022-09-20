@@ -54,20 +54,20 @@ class Checker:
 
     def _run(self):
         while True:
-            # sort weibo posts in chronogical order
-            doc_cursor = (
-                self.coll_wb.find({}, {"_id": False}, no_cursor_timeout=True)
-                .sort("publish_time", pymongo.ASCENDING)
-                .batch_size(5)
-            )
-
-            ## process finite amount of docs at a time
-            ## to avoid CursorNotFound error
+            ## sort weibo posts in chronogical order
             # doc_cursor = (
             #     self.coll_wb.find({}, {"_id": False}, no_cursor_timeout=True)
             #     .sort("publish_time", pymongo.ASCENDING)
-            #     .limit(10)
+            #     .batch_size(5)
             # )
+
+            ## process finite amount of docs at a time
+            ## to avoid CursorNotFound error
+            doc_cursor = (
+                self.coll_wb.find({}, {"_id": False}, no_cursor_timeout=True)
+                .sort("publish_time", pymongo.ASCENDING)
+                .limit(10)
+            )
 
             for doc in doc_cursor:
                 weibo_id = doc["id"]
