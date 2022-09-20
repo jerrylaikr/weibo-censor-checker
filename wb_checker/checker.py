@@ -55,9 +55,19 @@ class Checker:
     def _run(self):
         while True:
             # sort weibo posts in chronogical order
-            doc_cursor = self.coll_wb.find(
-                {}, {"_id": False}, no_cursor_timeout=True
-            ).sort("publish_time", pymongo.ASCENDING)
+            doc_cursor = (
+                self.coll_wb.find({}, {"_id": False}, no_cursor_timeout=True)
+                .sort("publish_time", pymongo.ASCENDING)
+                .batch_size(5)
+            )
+
+            ## process finite amount of docs at a time
+            ## to avoid CursorNotFound error
+            # doc_cursor = (
+            #     self.coll_wb.find({}, {"_id": False}, no_cursor_timeout=True)
+            #     .sort("publish_time", pymongo.ASCENDING)
+            #     .limit(10)
+            # )
 
             for doc in doc_cursor:
                 weibo_id = doc["id"]
@@ -81,7 +91,7 @@ class Checker:
                 logger.info("Checking...")
                 fetched_content = self.get_weibo_content_by_id(weibo_id)
 
-                # remove white spaces
+                # remove white spaces for comparison
                 orig_content = "".join(orig_content.split())
                 fetched_content = "".join(fetched_content.split())
 
@@ -112,7 +122,8 @@ class Checker:
                 #     sleep(0.2)
 
             doc_cursor.close()
-            for _ in tqdm(range(60)):
+
+            for _ in tqdm(range(30)):
                 sleep(1)
 
     def run(self):
