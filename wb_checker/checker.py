@@ -6,6 +6,7 @@ import json
 import logging
 import logging.config
 import os
+import random
 import shutil
 from sqlite3 import Cursor
 import sys
@@ -40,14 +41,14 @@ class Checker:
 
     def get_weibo_content_by_id(self, weibo_id) -> str:
         try:
-            for i in range(5):
+            for i in range(6):
                 if i > 0:
                     logger.info(f"Retry {i}/5")
                 parser = SingleWeiboParser(self.cookie, weibo_id)
                 weibo_content = parser.get_content()
                 if weibo_content is not None:
                     return weibo_content
-                sleep(8)
+                sleep(random.randint(6, 16))
 
         except Exception as e:
             logger.exception(e)
