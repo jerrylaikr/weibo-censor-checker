@@ -107,9 +107,19 @@ class Checker:
                     logger.info("X" * 30 + "  NOT SAME  " + "X" * 30)
                     # add orig doc to keeper coll
                     doc_copy = {k: v for k, v in doc.items() if k != "_id"}
-                    doc_copy["state"] = (
-                        "DELETED" if not fetched_content else "MODIFIED"
-                    )  # reason to keep this post
+
+                    # reason to keep this post
+                    if not fetched_content:
+                        doc_copy["state"] = "DELETED"
+                    elif (
+                        "抱歉，此微博已被作者删除。" in fetched_content
+                        or "抱歉，由于作者设置，你暂时没有这条微博的查看权限哦。" in fetched_content
+                    ):
+                        doc_copy["state"] = "DELETED_ORIG"
+                    else:
+                        doc_copy["state"] = "MODIFIED"
+
+                    # push to keeper collection
                     self.coll_keeper.update_one(
                         {"id": weibo_id},
                         {"$set": doc_copy},
