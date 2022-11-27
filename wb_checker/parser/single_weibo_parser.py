@@ -1,6 +1,6 @@
 import logging
-from weibo_spider.parser.comment_parser import CommentParser
-from weibo_spider.parser.util import handle_garbled
+from wb_feed_spider.parser.comment_parser import CommentParser
+from wb_feed_spider.parser.util import handle_garbled
 
 logger = logging.getLogger("checker.single_weibo_parser")
 
@@ -23,7 +23,8 @@ class SingleWeiboParser(CommentParser):
     def get_content(self):
         """
         原创微博：
-            不论长短，返回：用户名+":"+微博内容
+            不论长短，返回：微博内容
+            (无用户名)
         转发微博：
             返回"转发理由: "+转发理由+"原始用户: "+原po用户名+"转发内容: "+原po内容
         """
@@ -35,11 +36,12 @@ class SingleWeiboParser(CommentParser):
 
             info = self.selector.xpath("//div[@class='c']")[1]
             if self.is_original_weibo():
-                # 原创微博，需要加入用户名
-                original_user = info.xpath("div/a/text()")[0]
+                # 原创微博
+                # original_user = info.xpath("div/a/text()")[0]
                 orig_post = self.get_long_weibo()
-                if orig_post:
-                    return original_user + ":" + orig_post
+                # if orig_post:
+                #     return original_user + ":" + orig_post
+                return orig_post
             else:
                 # 拼接转发信息
                 # 如果orig_post为None或空字符串说明获取失败，需要重新获取

@@ -8,14 +8,13 @@ import logging.config
 import os
 import random
 import shutil
-from sqlite3 import Cursor
 import sys
 from time import sleep
 
 import pymongo
 from tqdm import tqdm
 
-from weibo_spider.datetime_util import str_to_time
+from wb_feed_spider.datetime_util import str_to_time
 from wb_checker.parser.single_weibo_parser import SingleWeiboParser
 
 logging_path = os.path.split(os.path.realpath(__file__))[0] + os.sep + "logging.conf"
@@ -99,6 +98,7 @@ class Checker:
                 if (
                     orig_content == fetched_content
                     or orig_content == fetched_content[fetched_content.find(":") + 1 :]
+                    or orig_content[orig_content.find(":") + 1 :] == fetched_content
                 ):
                     logger.info("O" * 30 + "    SAME    " + "O" * 30)
                 else:
